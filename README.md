@@ -1,6 +1,7 @@
-# cless
+# cLess
 
-# setup add this to /etc/hosts
+## Setup 
+add this to /etc/hosts
 ```
 127.0.0.1       golang.cless.cloud
 127.0.0.1       python.cless.cloud
@@ -9,8 +10,11 @@
 127.0.0.1       rust.cless.cloud
 ```
 
-# run server
+## Run Server
 go run main
 
-## test or browse
+## Test or Browse
 curl http://rust.cless.cloud/
+
+## architecture
+![Diagram](diagram.jpg)
