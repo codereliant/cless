@@ -23,7 +23,6 @@ const defaultPort = 8080 // let's assume that all the images expose port 8080
 // We will use a map and a mutex to store and manage our docker containers
 var mutex = &sync.Mutex{}
 
-// var services = make(map[string]Service) // map of hostname to services
 var containers = make(map[string]RunningService) // map of hostname to running services
 var portToContainerID = make(map[int]string)
 
@@ -78,7 +77,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 func startContainer(containerName string) (*RunningService, error) {
 	port := getUnusedPort(containerName)
-	//fmt.Println("docker", "run", "-d", "-p", fmt.Sprintf("%d:%d", port, defaultPort), containerName)
 	cmd := exec.Command("docker", "run", "-d", "-p", fmt.Sprintf("%d:%d", port, defaultPort), containerName)
 	containerID, err := cmd.Output()
 	if err != nil {
