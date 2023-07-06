@@ -12,16 +12,19 @@ import (
 	"time"
 )
 
-type Container struct {
-	ID   string
-	Port int
+type RunningService struct {
+	ContainerID  string // docker container ID
+	AssignedPort int    // port assigned to the container
+	Ready        bool   // whether the container is ready to serve requests
 }
 
-const defaultPort = 8080
+const defaultPort = 8080 // let's assume that all the images expose port 8080
 
 // We will use a map and a mutex to store and manage our docker containers
 var mutex = &sync.Mutex{}
-var containers = make(map[string]Container)
+
+// var services = make(map[string]Service) // map of hostname to services
+var containers = make(map[string]RunningService) // map of hostname to running services
 var portToContainerID = make(map[int]string)
 
 func main() {
@@ -36,51 +39,60 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	mutex.Unlock()
 
 	if !exists {
-		containerID, port := startContainer(containerName)
 		mutex.Lock()
-		containers[containerName] = Container{
-			ID:   containerID,
-			Port: port,
+		rSvc, err := startContainer(containerName)
+		if err != nil {
+			fmt.Printf("Failed to start container: %s\n", err)
+			w.Write([]byte("Failed to start container"))
+			return
+		}
+		containers[containerName] = RunningService{
+			ContainerID:  rSvc.ContainerID,
+			AssignedPort: rSvc.AssignedPort,
 		}
 		mutex.Unlock()
+		if !isContainerReady(*rSvc) {
+			w.Write([]byte("Container not ready after 30 seconds"))
+		} else {
+			mutex.Lock()
+			rSvc := containers[containerName]
+			rSvc.Ready = true
+			mutex.Unlock()
+		}
+	} else {
+		mutex.Lock()
+		rSvc := containers[containerName]
+		mutex.Unlock()
+		if !rSvc.Ready {
+			w.Write([]byte("Container not ready yet"))
+			return
+		}
 	}
 
 	proxy := httputil.NewSingleHostReverseProxy(&url.URL{
 		Scheme: "http",
-		Host:   fmt.Sprintf("localhost:%d", containers[containerName].Port),
+		Host:   fmt.Sprintf("localhost:%d", containers[containerName].AssignedPort),
 	})
 	proxy.ServeHTTP(w, r)
 }
 
-func startContainer(containerName string) (string, int) {
+func startContainer(containerName string) (*RunningService, error) {
 	port := getUnusedPort(containerName)
-	fmt.Println("docker", "run", "-d", "-p", fmt.Sprintf("%d:%d", port, defaultPort), containerName)
+	//fmt.Println("docker", "run", "-d", "-p", fmt.Sprintf("%d:%d", port, defaultPort), containerName)
 	cmd := exec.Command("docker", "run", "-d", "-p", fmt.Sprintf("%d:%d", port, defaultPort), containerName)
 	containerID, err := cmd.Output()
 	if err != nil {
 		fmt.Printf("Failed to start container: %s\n", err)
-		panic(err)
+		return nil, err
 	}
-
-	start := time.Now()
-	for i := 0; i < 15; i++ {
-		fmt.Println("Waiting for container to start...")
-		resp, err := http.Get(fmt.Sprintf("http://localhost:%d", port))
-		if err != nil {
-			fmt.Println(err.Error())
-		}
-		if resp != nil && resp.StatusCode == 200 {
-			fmt.Println("Container ready!")
-			break
-		}
-		fmt.Println("Container not ready yet...")
-		time.Sleep(1 * time.Second)
-	}
-	fmt.Printf("Container started in %s\n", time.Since(start))
-
 	portToContainerID[port] = string(containerID)
+	rSvc := RunningService{
+		ContainerID:  string(containerID),
+		AssignedPort: port,
+		Ready:        false,
+	}
 
-	return string(containerID), port
+	return &rSvc, nil
 }
 
 func getContainerNameFromHost(host string) string {
@@ -97,4 +109,23 @@ func getUnusedPort(containerName string) int {
 		return getUnusedPort(containerName)
 	}
 	return port
+}
+
+func isContainerReady(rSvc RunningService) bool {
+	start := time.Now()
+	for i := 0; i < 29; i++ {
+		fmt.Println("Waiting for container to start...")
+		resp, err := http.Get(fmt.Sprintf("http://localhost:%d", rSvc.AssignedPort))
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+		if resp != nil && resp.StatusCode == 200 {
+			fmt.Println("Container ready!")
+			fmt.Printf("Container started in %s\n", time.Since(start))
+			return true
+		}
+		fmt.Println("Container not ready yet...")
+		time.Sleep(1 * time.Second)
+	}
+	return false
 }
