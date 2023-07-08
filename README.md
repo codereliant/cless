@@ -1,20 +1,8 @@
-# cLess
+## cLess
 
-## Setup 
-add this to /etc/hosts
-```
-127.0.0.1       golang.cless.cloud
-127.0.0.1       python.cless.cloud
-127.0.0.1       java.cless.cloud
-127.0.0.1       nodejs.cless.cloud
-127.0.0.1       rust.cless.cloud
-```
+This is an educational project with an attempt at demistifying serverless systems and how they work.
+The project is split into parts, each part build on the previous part to improve or add functionality.
 
-## Run Server
-go run main
-
-## Test or Browse
-curl http://rust.cless.cloud/
-
-## architecture
-![Diagram](diagram.jpg)
+### Parts:
+- [Part 1: The basics (MVP)](/part-1)
+- [Part-2: Admin Service & Modularity](part-2) 

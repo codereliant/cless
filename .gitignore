@@ -1,5 +1,5 @@
-go/docker-gs-ping
-java/spring-petclinic
-python/.venv
-rust/docker-rust-hello
+images/go/docker-gs-ping
+images/java/spring-petclinic
+images/python/.venv
+images/rust/docker-rust-hello
 
