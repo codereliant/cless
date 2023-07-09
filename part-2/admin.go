@@ -11,6 +11,7 @@ import (
 
 const AdminHost = "admin.cless.cloud"
 const AdminPort = 1323
+const HostNameTemplate = "%s.cless.cloud"
 
 var ErrServiceNotFound = errors.New("service not found")
 var ErrServiceAlreadyExists = errors.New("service already exists")
@@ -20,6 +21,11 @@ type ServiceDefinition struct {
 	ImageName string `json:"image_name"`
 	ImageTag  string `json:"image_tag"`
 	Port      int    `json:"port"`
+	Host      string `json:"host"`
+}
+
+func (sDef *ServiceDefinition) isValid() bool {
+	return (sDef.Name != "" && sDef.Name != "admin") && sDef.ImageName != "" && sDef.ImageTag != "" && sDef.Port > 0
 }
 
 type ServiceDefinitionRepository interface {
@@ -93,6 +99,7 @@ func (m *ServiceDefinitionManager) RegisterServiceDefinition(name string, imageN
 		ImageTag:  imageTag,
 		Port:      port,
 	}
+	service.Host = fmt.Sprintf(HostNameTemplate, name)
 	return m.repo.Create(service)
 }
 
@@ -131,6 +138,9 @@ func StartAdminServer(manager *ServiceDefinitionManager) {
 		service := new(ServiceDefinition)
 		if err := c.Bind(service); err != nil {
 			return c.String(http.StatusBadRequest, err.Error())
+		}
+		if !service.isValid() {
+			return c.String(http.StatusBadRequest, "Invalid service definition")
 		}
 		if err := manager.RegisterServiceDefinition(service.Name, service.ImageName, service.ImageTag, service.Port); err != nil {
 			return c.String(http.StatusBadRequest, err.Error())
