@@ -5,4 +5,5 @@ The project is split into parts, each part build on the previous part to improve
 
 ### Parts:
 - [Part 1: The basics (MVP)](/part-1)
-- [Part-2: Admin Service & Modularity](part-2) 
+- [Part-2: Admin Service & Modularity](/part-2) 
+- [Part 3: Sqlite, docker go client, gracefull shutdown](/part-3)

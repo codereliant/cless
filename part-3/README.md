@@ -1,6 +1,6 @@
 # cLess
 
-# in this part we will refactor admin service & container manager:
+# in this part we will:
 - Add Sqlite as a storage for service definitions using Gorm
 - New hostname allocation strategy.
 - Use docker go client instead of exec.Command.
