@@ -14,6 +14,14 @@ type ServiceDefinitionManager struct {
 	mutex sync.Mutex
 }
 
+func SetOfAvailableHosts() map[string]bool {
+	hosts := make(map[string]bool)
+	for i := 0; i <= 100; i++ {
+		hosts[fmt.Sprintf(HostNameTemplate, i)] = true
+	}
+	return hosts
+}
+
 func NewServiceDefinitionManager(repo ServiceDefinitionRepository) *ServiceDefinitionManager {
 	hosts := SetOfAvailableHosts()
 	sDefs, err := repo.GetAll()
@@ -77,12 +85,4 @@ func (m *ServiceDefinitionManager) NewHostName() (*string, error) {
 		return &host, nil
 	}
 	return nil, errors.New("no more hosts available")
-}
-
-func SetOfAvailableHosts() map[string]bool {
-	hosts := make(map[string]bool)
-	for i := 0; i <= 100; i++ {
-		hosts[fmt.Sprintf(HostNameTemplate, i)] = true
-	}
-	return hosts
 }
