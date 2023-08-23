@@ -1,6 +1,8 @@
 from flask import Flask
+import os
 app = Flask(__name__)
 
 @app.route('/')
 def hello_world():
-    return 'Hello, Cless! from Flask!'
+    gretting = os.environ.get('GREETING', 'cLess')
+    return f'Hello, {gretting}!\n'
